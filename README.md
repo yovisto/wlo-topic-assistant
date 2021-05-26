@@ -1,6 +1,6 @@
 # WLO Topic Assistant
 
-A utility to map arbitrary text to the WLO/OEH topics vocabulary.
+A utility to map arbitrary text to the WLO/OEH topics vocabulary based on keyword matching.
  
 ## Prerequisites
 
