@@ -21,12 +21,29 @@ The result is a JSON output containing a tree like:
 
 ```
 WLO
-├── Englisch (2) [englisch]
+├── Englisch (4) [englisch]
+│   ├── Grammatik (2)
+│   │   └── Verben (2) [verben]
+│   │       └── Past (1) [past]
 │   └── Sprache und Aussprache (1)
 │       └── False friends (1) [false friends]
-└── Deutsch als Zweitsprache (1)
-    └── Wortschatz (1)
-        └── Schule und Studium (1) [englisch]
+├── Deutsch als Zweitsprache (3)
+│   ├── Grammatik (2)
+│   │   ├── Adverbien (1)
+│   │   │   └── Temporaladverbien (1) [heute]
+│   │   └── Verben (1) [verben]
+│   └── Wortschatz (1)
+│       └── Schule und Studium (1) [englisch]
+├── Spanisch (1)
+│   └── Grammatik (1)
+│       └── Verben (1) [verben]
+├── Deutsch (1)
+│   └── Grammatik und Sprache untersuchen (1)
+│       └── Wortarten (1)
+│           └── Verben (1) [verben]
+└── Türkisch (1)
+    └── Grammatik (1)
+        └── Verben (1) [verben]
 ```
 
 ```
