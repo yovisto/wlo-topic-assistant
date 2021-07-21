@@ -1,4 +1,4 @@
-import cherrypy, json, sys
+import cherrypy, json, sys, cherrypy_cors
 
 from topic_assistant import TopicAssistant
 
@@ -20,6 +20,7 @@ if __name__ == '__main__':
 
    a = TopicAssistant()
 
-   config = {'server.socket_host': '0.0.0.0'}
+   config = {'server.socket_host': '0.0.0.0', 'cors.expose.on': True}
+   cherrypy_cors.install()
    cherrypy.config.update(config)
    cherrypy.quickstart(WebService())	
