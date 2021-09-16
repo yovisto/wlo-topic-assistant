@@ -123,11 +123,11 @@ class TopicAssistant:
                         node.tag = node.tag + " [" + node.data['match'] + "]"
         T.show(key=lambda node: node.data["w"], reverse=True, idhidden=True) 
 
-        return json.dumps(T.to_dict(with_data=True, key=lambda node: node.data["w"], sort=True, reverse=True))
+        return T.to_dict(with_data=True, key=lambda node: node.data["w"], sort=True, reverse=True)
 
 if __name__ == '__main__':	
 
 	text = sys.argv[1]
 	a = TopicAssistant()
-	print(a.go(text))
+	print(json.dumps(a.go(text)))
 
