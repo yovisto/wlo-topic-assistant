@@ -23,12 +23,37 @@ class TopicAssistant:
 
     def __init__(self):
 
-        # create a RDF graph
+        # collect discipline labels
+        self.disciplineLabels={}
+        gdis = rdflib.Graph()
+        result = gdis.parse("https://raw.githubusercontent.com/openeduhub/oeh-metadata-vocabs/master/discipline.ttl", format="ttl")
+        for s, p, o in gdis.triples((None, SKOS.prefLabel, None)):
+            try:
+                self.disciplineLabels[s].append(str(o))
+            except:
+                self.disciplineLabels[s]=[str(o)]
+        for s, p, o in gdis.triples((None, SKOS.altLabel, None)):
+            try:
+                self.disciplineLabels[s].append(str(o))
+            except:
+                self.disciplineLabels[s]=[str(o)]
+
+        #print (self.disciplineLabels)
+
+        # create an RDF graph fo rthe topics
         g = rdflib.Graph()
 
         result = g.parse("https://raw.githubusercontent.com/openeduhub/oeh-metadata-vocabs/master/oehTopics.ttl", format="ttl")
         #result = g.parse("oehTopics.ttl", format="ttl")
 
+        # collect discipline mappings
+        self.disciplineMappings={}
+        for s, p, o in g.triples((None, SKOS.relatedMatch, None)):
+            for s2, p2, o2 in g.triples((s, SKOS.topConceptOf, None)):       
+                self.disciplineMappings[s]=o
+
+
+        # build the topic tree
         tree = Tree()
         #find top level node
         for s, p, o in g.triples((None, RDF.type, SKOS.ConceptScheme)):
@@ -36,7 +61,7 @@ class TopicAssistant:
             tree.create_node("WLO", s, data={'w':0, 'uri': s})
             for s2, p2, o2 in g.triples((s, SKOS.hasTopConcept, None)):
                 #print (s2, p2, o2)
-                tree.create_node(o2, o2, parent=s, data={'w':0, 'uri': o2})
+                tree.create_node(o2, o2, parent=s, data={'w':0, 'uri': str(o2)})
         
         foundSth = True
         while foundSth:
@@ -48,23 +73,24 @@ class TopicAssistant:
                         tree.create_node(s, s, parent=node, data={'w':0})
                         foundSth = True
 
-
+        # collect the labels
         for node in tree.all_nodes():
             for s, p, o in g.triples(( URIRef(node.identifier) , SKOS.prefLabel, None)):
                 node.tag=o
                 node.data['label']=o
 
 
+        # collect the "index terms" from keywords, preflabels, and discipline labels
         keywords={}
         for s, p, o in g.triples((None, URIRef("https://schema.org/keywords"), None)):
             #print (s, o)
-            n = self.normalize(o)
-            if len(n)>2:
-                try:
-                    keywords[s].append(n)
-                except:
-                    keywords[s]=[]
-                    keywords[s].append(n)
+            for k in str(o).split(','):
+                n = self.normalize(k)
+                if len(n)>2:
+                    try:
+                        keywords[s].append(n)
+                    except:
+                        keywords[s]=[n]
 
         for s, p, o in g.triples(( None , SKOS.prefLabel, None)):
             n = self.normalize(o)
@@ -73,12 +99,27 @@ class TopicAssistant:
                     if not n in keywords[s]:
                         keywords[s].append(n)
                 except:
-                    keywords[s]=[]
-                    keywords[s].append(n)
+                    keywords[s]=[n]
+
+            if s in self.disciplineMappings.keys():
+                disciplines = self.disciplineLabels[self.disciplineMappings[s]]
+                for d in disciplines:
+                    n = self.normalize(d)
+                    try:
+                        if not n in keywords[s]:
+                            keywords[s].append(n)
+                    except:
+                        keywords[s]=[n]
+
+
             
         self.keywords = keywords
         self.tree = tree
+        #for k in keywords.keys():
+        #    print(k, keywords[k])
 
+        #tree.show(key=lambda node: node.data["w"], reverse=True, idhidden=True) 
+        #sys.exit()
 
     def go(self, exampleText):
         T = Tree(self.tree, deep=True)
@@ -94,7 +135,10 @@ class TopicAssistant:
                         
                         if ntext.find(" " + k + " ")>-1 :                        
                             T.get_node(c).data['w']=T.get_node(c).data['w']+1
-                            T.get_node(c).data['match']=k 
+                            try:
+                                T.get_node(c).data['match']=T.get_node(c).data['match'] + ", " + k 
+                            except:
+                                T.get_node(c).data['match']=k 
                             #print (c, k)
 
         # propagate data to the root
