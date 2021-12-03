@@ -70,7 +70,7 @@ class TopicAssistant:
                 n = URIRef(node.tag)
                 for s, p, o in g.triples((None, SKOS.broader, n)):
                     if not tree.contains(s):
-                        tree.create_node(s, s, parent=node, data={'w':0})
+                        tree.create_node(s, s, parent=node, data={'w':0, 'uri': str(s)})
                         foundSth = True
 
         # collect the labels
