@@ -154,10 +154,11 @@ class TopicAssistant2:
 
         for i in reversed(ix):
             #print ( str(sim[i]), df.iloc[i]["id"], df.iloc[i]["path"])
-            for n in self.df.iloc[i]["path"].split():
-                nodes.add(n)                
-                if (newTree.contains(URIRef(n))):
-                    newTree.get_node(URIRef(n)).data['w']=newTree.get_node(URIRef(n)).data['w'] + sim[i][0]
+            if sim[i][0] >= 0.3:
+                for n in self.df.iloc[i]["path"].split():
+                    nodes.add(n)                
+                    if newTree.contains(URIRef(n)):
+                        newTree.get_node(URIRef(n)).data['w']=newTree.get_node(URIRef(n)).data['w'] + sim[i][0]
                     
         formatter = "{0:.2f}"
         #print (nodes)
@@ -165,9 +166,9 @@ class TopicAssistant2:
             #print (node.identifier), node.identifier in nodes)
             if node.tag!="WLO":
                 node.tag = node.tag + " (" + formatter.format(node.data['w']) + ")"
-            if not str(node.identifier) in nodes:
-                if (newTree.contains(node.identifier)):
-                    newTree.remove_node(node.identifier)
+                if not str(node.identifier) in nodes:
+                    if (newTree.contains(node.identifier)):
+                        newTree.remove_node(node.identifier)
 
                     
         #print (len(newTree))
