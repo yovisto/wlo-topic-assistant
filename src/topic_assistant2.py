@@ -32,8 +32,8 @@ class TopicAssistant2:
         g = rdflib.Graph()
 
         # parse in an RDF file hosted on the Internet
-        #result = g.parse("https://raw.githubusercontent.com/openeduhub/oeh-metadata-vocabs/master/oehTopics.ttl", format="ttl")
-        result = g.parse("oehTopics.ttl", format="ttl")
+        result = g.parse("https://raw.githubusercontent.com/openeduhub/oeh-metadata-vocabs/master/oehTopics.ttl", format="ttl")
+        #result = g.parse("oehTopics.ttl", format="ttl")
 
         tree = Tree()
         #find top level node
