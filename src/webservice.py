@@ -17,7 +17,7 @@ class WebService(object):
       return output
 
 
-@cherrypy.expose
+   @cherrypy.expose
    @cherrypy.tools.json_out()
    @cherrypy.tools.json_in()
    def topics2(self):
