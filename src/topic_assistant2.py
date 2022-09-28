@@ -23,18 +23,43 @@ import time
 class TopicAssistant2:
 
     def normalize(self, s):
-        s = re.sub('[^A-Za-z0-9öüäÖÄÜß]+', ' ', s)
+        s = re.sub('[^A-Za-z0-9öüäÖÄÜß_]+', ' ', s)
+        s = re.sub('_[0-9][0-9][0-9][0-9][0-9]+', ' ', s)
         return s.lower()
 
     def __init__(self):
+        
+        # collect discipline labels
+        self.disciplineLabels={}
+        gdis = rdflib.Graph()
+        result = gdis.parse("https://raw.githubusercontent.com/openeduhub/oeh-metadata-vocabs/master/discipline.ttl", format="ttl")
+        for s, p, o in gdis.triples((None, SKOS.prefLabel, None)):
+            try:
+                self.disciplineLabels[s].append(str(o))
+            except:
+                self.disciplineLabels[s]=[str(o)]
+        for s, p, o in gdis.triples((None, SKOS.altLabel, None)):
+            try:
+                self.disciplineLabels[s].append(str(o))
+            except:
+                self.disciplineLabels[s]=[str(o)]
 
-        # create a RDF graph
+        #print (self.disciplineLabels)
+
+        # create an RDF graph fo rthe topics
         g = rdflib.Graph()
 
-        # parse in an RDF file hosted on the Internet
         result = g.parse("https://raw.githubusercontent.com/openeduhub/oeh-metadata-vocabs/master/oehTopics.ttl", format="ttl")
         #result = g.parse("oehTopics.ttl", format="ttl")
 
+        # collect discipline mappings
+        self.disciplineMappings={}
+        for s, p, o in g.triples((None, SKOS.relatedMatch, None)):
+            for s2, p2, o2 in g.triples((s, SKOS.topConceptOf, None)):       
+                self.disciplineMappings[s]=o
+
+
+        # build the topic tree
         tree = Tree()
         #find top level node
         for s, p, o in g.triples((None, RDF.type, SKOS.ConceptScheme)):
@@ -42,71 +67,63 @@ class TopicAssistant2:
             tree.create_node("WLO", s, data={'w':0, 'uri': s})
             for s2, p2, o2 in g.triples((s, SKOS.hasTopConcept, None)):
                 #print (s2, p2, o2)
-                tree.create_node(o2, o2, parent=s, data={'w':0, 'uri': o2})
-                #break
-            
+                tree.create_node(o2, o2, parent=s, data={'w':0, 'uri': str(o2)})
+        
         foundSth = True
-        #für jeden Knoten finde Kindknoten
         while foundSth:
             foundSth = False
-            #print (len(tree))
             for node in tree.all_nodes():
-                #print (node.tag)
                 n = URIRef(node.tag)
                 for s, p, o in g.triples((None, SKOS.broader, n)):
-                    #print (s, tree.contains(s))
                     if not tree.contains(s):
-                        tree.create_node(s, s, parent=node, data={'w':0})
+                        tree.create_node(s, s, parent=node, data={'w':0, 'uri': str(s)})
                         foundSth = True
 
-
+        # collect the labels
         for node in tree.all_nodes():
             for s, p, o in g.triples(( URIRef(node.identifier) , SKOS.prefLabel, None)):
                 node.tag=o
                 node.data['label']=o
-                #print (o)
 
-        vocabulary = {}
-        
-        ## create list of keywords
+
+        # collect the "index terms" from keywords, preflabels, and discipline labels
         keywords={}
         for s, p, o in g.triples((None, URIRef("https://schema.org/keywords"), None)):
             #print (s, o)
-            n = self.normalize(o)
-            if len(n)>2:
-                try:
-                    keywords[s].append(n)
-                except:
-                    keywords[s]=[]
-                    keywords[s].append(n)                    
-                try:
-                    vocabulary[n]=vocabulary[n] + 1
-                except:
-                    vocabulary[n]=1
+            for k in str(o).split(','):
+                n = self.normalize(k)
+                if len(n)>2:
+                    try:
+                        keywords[s].append(n)
+                    except:
+                        keywords[s]=[n]
 
-        # prefLabel
         for s, p, o in g.triples(( None , SKOS.prefLabel, None)):
             n = self.normalize(o)
-            #print (n)
             if len(n)>2:
                 try:
                     if not n in keywords[s]:
                         keywords[s].append(n)
                 except:
-                    keywords[s]=[]
-                    keywords[s].append(n)
-                try:
-                    vocabulary[n]=vocabulary[n] + 1
-                except:
-                    vocabulary[n]=1                    
-            
-        self.vocabulary = vocabulary    
+                    keywords[s]=[n]
+
+            if s in self.disciplineMappings.keys():
+                disciplines = self.disciplineLabels[self.disciplineMappings[s]]
+                for d in disciplines:
+                    n = self.normalize(d)
+                    try:
+                        if not n in keywords[s]:
+                            keywords[s].append(n)
+                    except:
+                        keywords[s]=[n]
+
         self.keywords = keywords
         self.tree = tree
-        
         self.model = SentenceTransformer('all-mpnet-base-v2')
         self.df = pd.DataFrame(self.genPaths(), columns=['id','text', 'path'])
         self.embeddings = self.model.encode(self.df['text']) 
+
+ 
         
     def genPaths(self):
         #print (str(len(self.tree.leaves())))
@@ -142,11 +159,12 @@ class TopicAssistant2:
                 if (newTree.contains(URIRef(n))):
                     newTree.get_node(URIRef(n)).data['w']=newTree.get_node(URIRef(n)).data['w'] + sim[i][0]
                     
-                
+        formatter = "{0:.2f}"
         #print (nodes)
-        for node in newTree.all_nodes():   
+        for node in newTree.all_nodes():
             #print (node.identifier), node.identifier in nodes)
-            node.tag = node.tag + " (" + str(node.data['w']) + ")"
+            if node.tag!="WLO":
+                node.tag = node.tag + " (" + formatter.format(node.data['w']) + ")"
             if not str(node.identifier) in nodes:
                 if (newTree.contains(node.identifier)):
                     newTree.remove_node(node.identifier)
