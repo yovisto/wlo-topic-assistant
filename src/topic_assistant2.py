@@ -64,7 +64,7 @@ class TopicAssistant2:
         #find top level node
         for s, p, o in g.triples((None, RDF.type, SKOS.ConceptScheme)):
             #print (s, p, o)
-            tree.create_node("WLO", s, data={'w':0, 'uri': s})
+            tree.create_node("WLO", s, data={'w':0, 'uri': str(s)})
             for s2, p2, o2 in g.triples((s, SKOS.hasTopConcept, None)):
                 #print (s2, p2, o2)
                 tree.create_node(o2, o2, parent=s, data={'w':0, 'uri': str(o2)})
@@ -83,7 +83,7 @@ class TopicAssistant2:
         for node in tree.all_nodes():
             for s, p, o in g.triples(( URIRef(node.identifier) , SKOS.prefLabel, None)):
                 node.tag=o
-                node.data['label']=o
+                node.data['label']=str(o)
 
 
         # collect the "index terms" from keywords, preflabels, and discipline labels
@@ -116,6 +116,14 @@ class TopicAssistant2:
                             keywords[s].append(n)
                     except:
                         keywords[s]=[n]
+
+        # collect descriptions
+        #for s, p, o in g.triples((None, SKOS.definition, None)):
+        #    try:
+        #        keywords[s].append(self.normalize(str(o)))
+        #    except:
+        #        keywords[s]=[self.normalize(str(o))] 
+
 
         self.keywords = keywords
         self.tree = tree
