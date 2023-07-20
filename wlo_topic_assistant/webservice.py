@@ -5,7 +5,7 @@ from wlo_topic_assistant.topic_assistant2 import TopicAssistant2
 a = None
 a2 = None
 
-class WebService(object):
+class WebService:
 
    @cherrypy.expose
    @cherrypy.tools.json_out()
@@ -25,13 +25,17 @@ class WebService(object):
       print (data)
       output = a2.go(data["text"])
       return output
-
-
-if __name__ == '__main__':
-
+   
+def main():
+   global a, a2
    a = TopicAssistant()
    a2 = TopicAssistant2()
 
-   config = {'server.socket_host': '0.0.0.0'}
-   cherrypy.config.update(config)
-   cherrypy.quickstart(WebService())	
+   # listen to requests from any incoming IP address
+   cherrypy.server.socket_host = "0.0.0.0"
+   cherrypy.quickstart(WebService())
+
+
+if __name__ == '__main__':
+   main()
+
