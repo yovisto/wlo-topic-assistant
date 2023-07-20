@@ -15,28 +15,19 @@
       # the python version we are using
       python = pkgs.python310;
 
-      ### build python packages not packaged in nixpkgs
-      treelib = with python.pkgs; buildPythonPackage rec {
-        pname = "treelib";
-        version = "1.6.4";
-        src = fetchPypi {
-          inherit pname version;
-          sha256 = "1a2e838f6b99e2690bc3d992d5a1f04cdb4af6564bd7688883c23d17257bbb2a";
-        };
-        # dependencies for this python package
-        propagatedBuildInputs = [six];
-      };
-
       ### create the python installation for the application
       python-packages-build = py-pkgs:
         with py-pkgs; [cherrypy
                        rdflib
-                       treelib
                        nltk
                        sentence-transformers
                        scikit-learn
                        pandas
                        torchWithoutCuda
+                       # dependencies from PyPi, generated through nix-template
+                       (pkgs.callPackage
+                         ./pkgs/treelib.nix
+                         {inherit buildPythonPackage six;})
                       ];
       python-build = python.withPackages python-packages-build;
 
@@ -44,7 +35,7 @@
       # the development installation contains all build packages,
       # plus some additional ones we do not need to include in production.
       python-packages-devel = py-pkgs:
-        with py-pkgs; [ipython jupyter black] # some example packages
+        with py-pkgs; [ipython jupyter black]
                       ++ (python-packages-build py-pkgs); 
       python-devel = python.withPackages python-packages-devel;
       
@@ -107,6 +98,8 @@
             # non-python packages
             pkgs.poetry
             pkgs.nodePackages.pyright
+            # for automatically generating nix expressions, e.g. from PyPi
+            pkgs.nix-template
           ];
         };
       };
