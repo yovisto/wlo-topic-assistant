@@ -37,47 +37,6 @@
 
       python-app = pkgs.poetry2nix.mkPoetryApplication {
         inherit projectDir python;
-        overrides = pkgs.poetry2nix.overrides.withDefaults (self: super: {
-          wheel = super.wheel.override { preferWheel = false; };
-
-          nvidia-cudnn-cu11 = super.nvidia-cudnn-cu11.overridePythonAttrs (attrs: {
-            nativeBuildInputs = attrs.nativeBuildInputs or [ ] ++ [ pkgs.autoPatchelfHook ];
-            propagatedBuildInputs = attrs.propagatedBuildInputs or [ ] ++ [
-              self.nvidia-cublas-cu11
-              self.pkgs.cudaPackages.cudnn_8_5_0
-            ];
-
-            preFixup = ''
-            addAutoPatchelfSearchPath "${self.nvidia-cublas-cu11}/${self.python.sitePackages}/nvidia/cublas/lib"
-          '';
-            postFixup = ''
-            rm -r $out/${self.python.sitePackages}/nvidia/{__pycache__,__init__.py}
-          '';
-          });
-
-          nvidia-cuda-nvrtc-cu11 = super.nvidia-cuda-nvrtc-cu11.overridePythonAttrs (_: {
-            postFixup = ''
-            rm -r $out/${self.python.sitePackages}/nvidia/{__pycache__,__init__.py}
-          '';
-          });
-
-          torch = super.torch.overridePythonAttrs (attrs: {
-            nativeBuildInputs = attrs.nativeBuildInputs or [ ] ++ [
-              pkgs.autoPatchelfHook
-              pkgs.cudaPackages.autoAddOpenGLRunpathHook
-            ];
-            buildInputs = attrs.buildInputs or [ ] ++ [
-              self.nvidia-cudnn-cu11
-              self.nvidia-cuda-nvrtc-cu11
-              self.nvidia-cuda-runtime-cu11
-            ];
-            postInstall = ''
-            addAutoPatchelfSearchPath "${self.nvidia-cublas-cu11}/${self.python.sitePackages}/nvidia/cublas/lib"
-            addAutoPatchelfSearchPath "${self.nvidia-cudnn-cu11}/${self.python.sitePackages}/nvidia/cudnn/lib"
-            addAutoPatchelfSearchPath "${self.nvidia-cuda-nvrtc-cu11}/${self.python.sitePackages}/nvidia/cuda_nvrtc/lib"
-          '';
-          });
-        });
         preferWheels = true;
         groups = [ ];
       };
@@ -107,7 +66,7 @@
         copyToRoot = pkgs.buildEnv {
           name = "image-root";
           paths = [ python-app ];
-          pathsToLink = [ "/bin" ];
+          pathsToLink = [ "/" ];
         };
       };
       
