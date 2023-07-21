@@ -2,9 +2,9 @@
 
 A utility to map arbitrary text to the WLO/OEH topics vocabulary based on keyword matching.
 
-### Docker Installation
+## Docker Installation
  
-## Prerequisites
+### Prerequisites
 
 - Install [Docker](https://docker.com/).
 - Build the Docker container.
@@ -54,7 +54,7 @@ WLO
 
 This tree is a subset of the OEH-Topics taxonomy. The number in brackets indicates the number of matches found in the text. This number gets accumulated along the path of a leaf to the root. The terms in square brackets indicate the matching keywords.
 
-## Webservice
+### Webservice
 
 - To run the subject prediction tool as a simple REST based webservice, the following script can be used:
 
@@ -70,16 +70,16 @@ sh runService.sh
 curl -d '{"text" : "Im Englisch Unterricht behandeln wir heute Verben, Past Perfect und False Friends"}' -H "Content-Type: application/json" -X POST http://0.0.0.0:8080/topics
 ```	
 
-### Nix Installation
+## Nix Installation
 
-## Prerequisites
+### Prerequisites
 
 - Install the [Nix](https://nixos.org/) package manager through one off the following methods:
   - [unofficial installer](https://github.com/DeterminateSystems/nix-installer) (recommended, for Linux & macOS), or 
   - the official installer [for Linux](https://nixos.org/download.html#nix-install-linux) or [for macOS](https://nixos.org/download.html#nix-install-macos)
     - If installing through the official installer, enable the experimental `Flakes` feature: https://nixos.wiki/wiki/Flakes#Permanent 
 
-## Webservice
+### Webservice
 
 - Build the `Docker` image for the web-service:
 ```
