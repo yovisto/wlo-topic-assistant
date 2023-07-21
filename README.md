@@ -86,6 +86,11 @@ curl -d '{"text" : "Im Englisch Unterricht behandeln wir heute Verben, Past Perf
 nix build
 ```
 
+- Load it:
+```
+docker load -i result
+```
+
 - Run the web-service, noting the version that was supplied:
 
 ```
