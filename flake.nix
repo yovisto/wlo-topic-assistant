@@ -38,7 +38,7 @@
         with py-pkgs; [ipython jupyter black]
                       ++ (python-packages-build py-pkgs); 
       python-devel = python.withPackages python-packages-devel;
-      
+
       ### build the python application (i.e. the webservice)
       # fetch & unzip nltk-stopwords, an external dependency we are using
       nltk-stopwords = pkgs.fetchzip {
@@ -55,8 +55,8 @@
         doCheck = false;
         # put nltk-punkt into a directory that nltk searches in
         preBuild = ''
-          ${pkgs.coreutils}/bin/mkdir -p $out/nltk_data/corpora/stopwords &&
-          ${pkgs.coreutils}/bin/cp -r ${nltk-stopwords.out}/* $out/nltk_data/corpora/stopwords
+            ${pkgs.coreutils}/bin/mkdir -p $out/nltk_data/corpora/stopwords &&
+            ${pkgs.coreutils}/bin/cp -r ${nltk-stopwords.out}/* $out/nltk_data/corpora/stopwords
         '';
       };
 
@@ -81,26 +81,27 @@
           pathsToLink = [ "/bin" "/nltk_data" ];
         };
       };
-      
-    in
-      rec {
-        # the packages that we can build
-        packages.${system} = rec {
-          inherit wlo-topic-assistant;
-          docker = docker-img;
-          default = docker;
-        };
-        # the development environment
-        devShells.${system}.default = pkgs.mkShell {
-          buildInputs = [
-            # the development installation of python
-            python-devel
-            # non-python packages
-            pkgs.poetry
-            pkgs.nodePackages.pyright
-            # for automatically generating nix expressions, e.g. from PyPi
-            pkgs.nix-template
-          ];
-        };
+
+    in rec {
+      # the packages that we can build
+      packages.${system} = rec {
+        inherit wlo-topic-assistant;
+        docker = docker-img;
+        default = docker;
       };
+      # the development environment
+      devShells.${system}.default = pkgs.mkShell {
+        buildInputs = [
+          # the development installation of python
+          python-devel
+          # non-python packages
+          pkgs.poetry
+          pkgs.nodePackages.pyright
+          # for automatically generating nix expressions, e.g. from PyPi
+          pkgs.nix-template
+          # nix lsp
+          pkgs.rnix-lsp
+        ];
+      };
+    };
 }
