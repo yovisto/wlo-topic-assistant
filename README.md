@@ -75,8 +75,8 @@ curl -d '{"text" : "Im Englisch Unterricht behandeln wir heute Verben, Past Perf
 ## Prerequisites
 
 - Install the [Nix](https://nixos.org/) package manager through one off the following methods:
-  - [https://github.com/DeterminateSystems/nix-installer](unofficial installer) (recommended, for Linux & macOS), or 
-  - the official installer [https://nixos.org/download.html#nix-install-linux](for Linux) or [https://nixos.org/download.html#nix-install-macos](for macOS)
+  - [unofficial installer](https://github.com/DeterminateSystems/nix-installer) (recommended, for Linux & macOS), or 
+  - the official installer [for Linux](https://nixos.org/download.html#nix-install-linux) or [for macOS](https://nixos.org/download.html#nix-install-macos)
     - If installing through the official installer, enable the experimental `Flakes` feature: https://nixos.wiki/wiki/Flakes#Permanent 
 
 ## Webservice
