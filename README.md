@@ -1,6 +1,8 @@
 # WLO Topic Assistant
 
 A utility to map arbitrary text to the WLO/OEH topics vocabulary based on keyword matching.
+
+### Docker Installation
  
 ## Prerequisites
 
@@ -68,5 +70,31 @@ sh runService.sh
 curl -d '{"text" : "Im Englisch Unterricht behandeln wir heute Verben, Past Perfect und False Friends"}' -H "Content-Type: application/json" -X POST http://0.0.0.0:8080/topics
 ```	
 
+### Nix Installation
 
+## Prerequisites
+
+- Install the [Nix](https://nixos.org/) package manager through one off the following methods:
+  - [https://github.com/DeterminateSystems/nix-installer](unofficial installer) (recommended, for Linux & macOS), or 
+  - the official installer [https://nixos.org/download.html#nix-install-linux](for Linux) or [https://nixos.org/download.html#nix-install-macos](for macOS)
+    - If installing through the official installer, enable the experimental `Flakes` feature: https://nixos.wiki/wiki/Flakes#Permanent 
+
+## Webservice
+
+- Build the `Docker` image for the web-service:
+```
+nix build
+```
+
+- Run the web-service, noting the version that was supplied:
+
+```
+docker run -p 8080:8080 wlo-topic-assistant:<version>
+```
+
+- To retrieve the topics, create a POST request and submit a json document with a text as for example: 
+
+```
+curl -d '{"text" : "Im Englisch Unterricht behandeln wir heute Verben, Past Perfect und False Friends"}' -H "Content-Type: application/json" -X POST http://0.0.0.0:8080/topics
+```	
 
