@@ -29,7 +29,6 @@
                          ./pkgs/treelib.nix
                          {inherit buildPythonPackage six;})
                       ];
-      python-build = python.withPackages python-packages-build;
 
       ### create the python installation for development
       # the development installation contains all build packages,
@@ -37,7 +36,6 @@
       python-packages-devel = py-pkgs:
         with py-pkgs; [ipython jupyter black]
                       ++ (python-packages-build py-pkgs); 
-      python-devel = python.withPackages python-packages-devel;
 
       ### build the python application (i.e. the webservice)
       # fetch & unzip nltk-stopwords, an external dependency we are using
@@ -47,38 +45,32 @@
       };
 
       # build the application itself
-      wlo-topic-assistant = python-build.pkgs.buildPythonApplication {
+      wlo-topic-assistant = python.pkgs.buildPythonApplication {
         pname = "wlo-topic-assistant";
         version = "0.1.1";
         src = projectDir;
-        propagatedBuildInputs = [python-build];
         doCheck = false;
-        # put nltk-punkt into a directory that nltk searches in
+        propagatedBuildInputs = (python-packages-build python.pkgs);
+        # include nltk-stopwords
         preBuild = ''
-            ${pkgs.coreutils}/bin/mkdir -p $out/nltk_data/corpora/stopwords &&
-            ${pkgs.coreutils}/bin/cp -r ${nltk-stopwords.out}/* $out/nltk_data/corpora/stopwords
+          mkdir -p $out/lib/nltk_data/corpora/stopwords
+          cp -r ${nltk-stopwords.out}/* $out/lib/nltk_data/corpora/stopwords
         '';
+        makeWrapperArgs = ["--set NLTK_DATA $out/lib/nltk_data"];
       };
 
       ### build the docker image
-      docker-img = pkgs.dockerTools.buildImage {
+      docker-img = pkgs.dockerTools.buildLayeredImage {
         name = wlo-topic-assistant.pname;
         tag = wlo-topic-assistant.version;
         config = {
-          WorkingDir = "/";
-          Cmd = ["/bin/wlo-topic-assistant"];
+          Cmd = ["${wlo-topic-assistant}/bin/wlo-topic-assistant"];
           # because the wlo-topic-assistant tries accessing the internet,
           # we need to link to an ssl certificates file in the image.
           # in the future, we could modify the source code to try
           # reading local files instead, and then grab these in nix,
           # similarly to nltk-stopwords 
           Env = [ "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt" ];
-        };
-        # copy the binaries and nltk_data of the application into the image
-        copyToRoot = pkgs.buildEnv {
-          name = "image-root";
-          paths = [ wlo-topic-assistant ];
-          pathsToLink = [ "/bin" "/nltk_data" ];
         };
       };
 
@@ -93,14 +85,12 @@
       devShells.${system}.default = pkgs.mkShell {
         buildInputs = [
           # the development installation of python
-          python-devel
+          (python-packages-devel python.pkgs)
           # non-python packages
           pkgs.poetry
           pkgs.nodePackages.pyright
           # for automatically generating nix expressions, e.g. from PyPi
           pkgs.nix-template
-          # nix lsp
-          pkgs.rnix-lsp
         ];
       };
     };
