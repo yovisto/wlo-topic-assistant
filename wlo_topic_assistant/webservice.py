@@ -1,3 +1,4 @@
+import argparse
 import cherrypy, json, sys
 from wlo_topic_assistant.topic_assistant import TopicAssistant
 from wlo_topic_assistant.topic_assistant2 import TopicAssistant2
@@ -35,8 +36,21 @@ def main():
     a = TopicAssistant()
     a2 = TopicAssistant2()
 
-    # listen to requests from any incoming IP address
-    cherrypy.server.socket_host = "0.0.0.0"
+    # define CLI arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--port", action="store", default=8080, help="Port to listen on", type=int
+    )
+    parser.add_argument(
+        "--host", action="store", default="0.0.0.0", help="Hosts to listen to", type=str
+    )
+
+    # read passed CLI arguments
+    args = parser.parse_args()
+
+    # start the cherrypy service using the passed arguments
+    cherrypy.server.socket_host = args.host
+    cherrypy.server.socket_port = args.port
     cherrypy.quickstart(WebService())
 
 
