@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name="wlo-topic-assistant",
-    version="0.1.0",
+    version="0.1.2",
     description="A utility to map arbitrary text to the WLO/OEH topics vocabulary based on keyword matching.",
     author="",
     author_email="",

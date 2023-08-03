@@ -61,10 +61,18 @@
           fetchLFS = true;
         };
 
+        # download the oeh-metadata vocabulary
+        oeh-metadata-vocabs = pkgs.fetchFromGitHub {
+          owner = "openeduhub";
+          repo = "oeh-metadata-vocabs";
+          rev = "a4034cf951b2585e3b6e8d901736ac03e61429e7";
+          hash = "sha256-txmx/b/Kc+xikQB63+t6ah/SkqxqsXbDDmVLAWtI3CM=";
+        };
+
         # build the application itself
         wlo-topic-assistant = python.pkgs.buildPythonApplication {
           pname = "wlo-topic-assistant";
-          version = "0.1.1";
+          version = "0.1.2";
           src = projectDir;
           propagatedBuildInputs = (python-packages-build python.pkgs);
           # no tests are available, nix built-in import check fails
@@ -78,24 +86,26 @@
           # make the created folder discoverable for NLTK
           makeWrapperArgs = ["--set NLTK_DATA $out/lib/nltk_data"];
           # replace calls to resources from the internet with prefetched ones
-          postPatch = ''
-            substituteInPlace wlo_topic_assistant/topic_assistant2.py --replace \
-              "all-mpnet-base-v2" "${all-mpnet-base-v2}"
+          prePatch = ''
+            substituteInPlace wlo_topic_assistant/*.py \
+              --replace \
+                "all-mpnet-base-v2" \
+                "${all-mpnet-base-v2}" \
+              --replace \
+                "https://raw.githubusercontent.com/openeduhub/oeh-metadata-vocabs/master/discipline.ttl" \
+                "${oeh-metadata-vocabs}/discipline.ttl" \
+              --replace \
+                "https://raw.githubusercontent.com/openeduhub/oeh-metadata-vocabs/master/oehTopics.ttl" \
+                "${oeh-metadata-vocabs}/oehTopics.ttl"
           '';
         };
 
         ### build the docker image
-        docker-img = pkgs.dockerTools.buildImage {
+        docker-img = pkgs.dockerTools.buildLayeredImage {
           name = wlo-topic-assistant.pname;
           tag = wlo-topic-assistant.version;
           config = {
             Cmd = ["${wlo-topic-assistant}/bin/wlo-topic-assistant"];
-            # because the wlo-topic-assistant tries accessing the internet,
-            # we need to link to an ssl certificates file in the image.
-            # in the future, we could modify the source code to try
-            # reading local files instead, and then grab these in nix,
-            # similarly to nltk-stopwords 
-            Env = [ "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt" ];
           };
         };
 
