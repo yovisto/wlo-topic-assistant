@@ -50,7 +50,15 @@
         # fetch & unzip nltk-stopwords, an external dependency we are using
         nltk-stopwords = pkgs.fetchzip {
           url = "https://github.com/nltk/nltk_data/raw/5db857e6f7df11eabb5e5665836db9ec8df07e28/packages/corpora/stopwords.zip";
-          sha256 = "sha256-tX1CMxSvFjr0nnLxbbycaX/IBnzHFxljMZceX5zElPY=";
+          hash = "sha256-tX1CMxSvFjr0nnLxbbycaX/IBnzHFxljMZceX5zElPY=";
+        };
+        
+        # download the sentence-transformer model being used
+        all-mpnet-base-v2 = pkgs.fetchgit {
+          url = "https://huggingface.co/sentence-transformers/all-mpnet-base-v2";
+          rev = "bd44305fd6a1b43c16baf96765e2ecb20bca8e1d";
+          hash = "sha256-lsKdkbIeAUZIieIaCmp1FIAP4NAo4HW2W7+6AOmGO10=";
+          fetchLFS = true;
         };
 
         # build the application itself
@@ -69,6 +77,11 @@
           '';
           # make the created folder discoverable for NLTK
           makeWrapperArgs = ["--set NLTK_DATA $out/lib/nltk_data"];
+          # replace calls to resources from the internet with prefetched ones
+          postPatch = ''
+            substituteInPlace wlo_topic_assistant/topic_assistant2.py --replace \
+              "all-mpnet-base-v2" "${all-mpnet-base-v2}"
+          '';
         };
 
         ### build the docker image
