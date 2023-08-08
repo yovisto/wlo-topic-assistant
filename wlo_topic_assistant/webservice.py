@@ -1,6 +1,8 @@
 import argparse
 import cherrypy, json, sys
+import wlo_topic_assistant
 from wlo_topic_assistant.topic_assistant import TopicAssistant
+from wlo_topic_assistant._version import __version__
 from wlo_topic_assistant.topic_assistant2 import TopicAssistant2
 
 a = None
@@ -19,6 +21,8 @@ class WebService:
         data = cherrypy.request.json
         print(data)
         output = a.go(data["text"])
+        if output:
+            output["version"] = __version__
         return output
 
     @cherrypy.expose
@@ -28,6 +32,8 @@ class WebService:
         data = cherrypy.request.json
         print(data)
         output = a2.go(data["text"])
+        if output:
+            output["version"] = __version__
         return output
 
 

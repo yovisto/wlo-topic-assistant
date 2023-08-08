@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from setuptools import setup
+from wlo_topic_assistant._version import __version__
 
 setup(
     name="wlo-topic-assistant",
@@ -12,5 +13,7 @@ setup(
         d for d in open("requirements.txt").readlines() if not d.startswith("--")
     ],
     package_dir={"": "."},
-    entry_points={"console_scripts": ["wlo-topic-assistant = wlo_topic_assistant.webservice:main"]},
+    entry_points={
+        "console_scripts": ["wlo-topic-assistant = wlo_topic_assistant.webservice:main"]
+    },
 )
