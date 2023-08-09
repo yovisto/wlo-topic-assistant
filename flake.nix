@@ -26,7 +26,9 @@
 
         ### create the python installation for the application
         python-packages-build = py-pkgs:
-          with py-pkgs; [cherrypy
+          with py-pkgs; [fastapi
+                         pydantic
+                         uvicorn
                          rdflib
                          nltk
                          sentence-transformers

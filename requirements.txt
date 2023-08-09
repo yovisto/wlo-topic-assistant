@@ -1,4 +1,6 @@
-cherrypy
+fastapi
+pydantic
+uvicorn
 rdflib
 treelib
 nltk

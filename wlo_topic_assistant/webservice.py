@@ -1,47 +1,31 @@
 import argparse
-import cherrypy, json, sys
-import wlo_topic_assistant
+
+import uvicorn
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+
 from wlo_topic_assistant.topic_assistant import TopicAssistant
 from wlo_topic_assistant._version import __version__
 from wlo_topic_assistant.topic_assistant2 import TopicAssistant2
 
-a = None
-a2 = None
+app = FastAPI()
 
 
-class WebService:
-    @cherrypy.expose
-    def _ping(self):
-        pass
+class Data(BaseModel):
+    text: str
 
-    @cherrypy.expose
-    @cherrypy.tools.json_out()
-    @cherrypy.tools.json_in()
-    def topics(self):
-        data = cherrypy.request.json
-        print(data)
-        output = a.go(data["text"])
-        if output:
-            output["version"] = __version__
-        return output
 
-    @cherrypy.expose
-    @cherrypy.tools.json_out()
-    @cherrypy.tools.json_in()
-    def topics2(self):
-        data = cherrypy.request.json
-        print(data)
-        output = a2.go(data["text"])
-        if output:
-            output["version"] = __version__
-        return output
+class Result(BaseModel):
+    tree: dict
+    version: str = __version__
+
+
+@app.get("/_ping")
+def _ping():
+    pass
 
 
 def main():
-    global a, a2
-    a = TopicAssistant()
-    a2 = TopicAssistant2()
-
     # define CLI arguments
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -50,14 +34,35 @@ def main():
     parser.add_argument(
         "--host", action="store", default="0.0.0.0", help="Hosts to listen to", type=str
     )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version="%(prog)s {version}".format(version=__version__),
+    )
 
     # read passed CLI arguments
     args = parser.parse_args()
 
-    # start the cherrypy service using the passed arguments
-    cherrypy.server.socket_host = args.host
-    cherrypy.server.socket_port = args.port
-    cherrypy.quickstart(WebService())
+    a = TopicAssistant()
+
+    @app.post("/topics")
+    def topics(data: Data) -> Result:
+        output = a.go(data.text)
+        return Result(tree=output)
+
+    a2 = TopicAssistant2()
+
+    @app.post("/topics2")
+    def topics2(data: Data) -> Result:
+        output = a2.go(data.text)
+        return Result(tree=output)
+
+    uvicorn.run(
+        "wlo_topic_assistant.webservice:app",
+        host=args.host,
+        port=args.port,
+        reload=False,
+    )
 
 
 if __name__ == "__main__":
