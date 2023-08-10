@@ -1,11 +1,12 @@
 import argparse
+import pickle
 
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-from wlo_topic_assistant.topic_assistant import TopicAssistant
 from wlo_topic_assistant._version import __version__
+from wlo_topic_assistant.topic_assistant import TopicAssistant
 from wlo_topic_assistant.topic_assistant2 import TopicAssistant2
 
 app = FastAPI()
@@ -43,14 +44,21 @@ def main():
     # read passed CLI arguments
     args = parser.parse_args()
 
-    a = TopicAssistant()
+    # import topic assistents, if they have been cached
+    def pre_loaded(cls: type):
+        try:
+            with open(f"data/{cls.__name__}_{__version__}.pkl", "rb") as f:
+                return pickle.load(f)
+        except FileNotFoundError:
+            return cls()
+
+    a = pre_loaded(TopicAssistant)
+    a2 = pre_loaded(TopicAssistant2)
 
     @app.post("/topics")
     def topics(data: Data) -> Result:
         output = a.go(data.text)
         return Result(tree=output)
-
-    a2 = TopicAssistant2()
 
     @app.post("/topics2")
     def topics2(data: Data) -> Result:

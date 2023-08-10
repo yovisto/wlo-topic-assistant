@@ -14,6 +14,9 @@ setup(
     ],
     package_dir={"": "."},
     entry_points={
-        "console_scripts": ["wlo-topic-assistant = wlo_topic_assistant.webservice:main"]
+        "console_scripts": [
+            "wlo-topic-assistant = wlo_topic_assistant.webservice:main",
+            "preload = wlo_topic_assistant.generate_assistants:main",
+        ]
     },
 )
