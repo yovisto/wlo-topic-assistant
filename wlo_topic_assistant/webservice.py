@@ -1,5 +1,7 @@
 import argparse
+from collections.abc import Iterator
 import pickle
+from typing import Any, Optional
 
 import uvicorn
 from fastapi import FastAPI, HTTPException
@@ -16,8 +18,15 @@ class Data(BaseModel):
     text: str
 
 
+class Topic(BaseModel):
+    weight: float
+    uri: str
+    label: Optional[str] = None
+    match: Optional[str] = None
+
+
 class Result(BaseModel):
-    tree: dict
+    topics: list[Topic]
     version: str = __version__
 
 
@@ -56,14 +65,55 @@ def main():
     a2 = pre_loaded(TopicAssistant2)
 
     @app.post("/topics")
-    def topics(data: Data) -> Result:
+    def topics(data: Data):
         output = a.go(data.text)
-        return Result(tree=output)
+        return output
 
     @app.post("/topics2")
-    def topics2(data: Data) -> Result:
+    def topics2(data: Data):
         output = a2.go(data.text)
-        return Result(tree=output)
+        return output
+
+    def __data_leaves(dictionary: dict) -> Iterator[tuple[list[str | int], Any]]:
+        """Iterate over all leaf-nodes of a nested dictionary"""
+        for key, value in dictionary.items():
+            if type(value) is dict:
+                if key == "data":
+                    yield [key], value
+                    continue
+
+                for sub_keys, sub_value in __data_leaves(value):
+                    yield [key] + sub_keys, sub_value
+
+            elif type(value) is list:
+                for index, entry in enumerate(value):
+                    if type(entry) is dict:
+                        for sub_keys, sub_value in __data_leaves(entry):
+                            yield [key, index] + sub_keys, sub_value
+
+    def __flatten_tree(tree: dict) -> list[Topic]:
+        leaves = list()
+        for _, data_leaf in __data_leaves(tree):
+            leaves.append(
+                Topic(
+                    weight=data_leaf.get("w"),
+                    uri=data_leaf.get("uri"),
+                    label=data_leaf.get("label"),
+                    match=data_leaf.get("match"),
+                )
+            )
+
+        return leaves
+
+    @app.post("/topics_flat")
+    def topics_flat(data: Data) -> Result:
+        tree = a.go(data.text)
+        return Result(topics=__flatten_tree(tree))
+
+    @app.post("/topics2_flat")
+    def topics2_flat(data: Data) -> Result:
+        tree = a2.go(data.text)
+        return Result(topics=__flatten_tree(tree))
 
     uvicorn.run(
         "wlo_topic_assistant.webservice:app",

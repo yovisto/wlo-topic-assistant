@@ -99,20 +99,22 @@
         wlo-topic-assistant-preload =
           python.pkgs.buildPythonApplication
             ( wlo-topic-assistant-spec // {
-              pname = "wlo-assistant-preload";
-              version = wlo-topic-assistant.version;
+              pname = "wlo-topic-assistant-preload";
               # prevent unnecessary rebuilds
               src = nix-filter {
                 root = self;
                 include = [
-                  "wlo_topic_assistant"
+                  ./wlo_topic_assistant/__init__.py
+                  ./wlo_topic_assistant/_version.py
+                  ./wlo_topic_assistant/generate_assistants.py
+                  ./wlo_topic_assistant/topic_assistant.py
+                  ./wlo_topic_assistant/topic_assistant2.py
                   ./setup.py
                   ./requirements.txt
                 ];
                 exclude = [
                   (nix-filter.matchExt "pyc")
                   (nix-filter.matchExt "ipynb")
-                  ./wlo_topic_assistant/webservice.py
                 ];
               };
               # replace calls to resources from the internet with prefetched ones
