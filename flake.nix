@@ -5,6 +5,14 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-23.05";
     flake-utils.url = "github:numtide/flake-utils";
     nix-filter.url = "github:numtide/nix-filter";
+    nltk-data = {
+      url = "github:nltk/nltk_data";
+      flake = false;
+    };
+    oeh-metadata-vocabs = {
+      url = "github:openeduhub/oeh-metadata-vocabs";
+      flake = false;
+    };
   };
 
   outputs = { self, nixpkgs, flake-utils, ... }:
@@ -26,7 +34,6 @@
         python = pkgs.python310;
         # utility to easily filter out unnecessary files from the source
         nix-filter = self.inputs.nix-filter.lib;
-
         
         ### create the python installation for the application
         python-packages-build = py-pkgs:
@@ -57,13 +64,14 @@
           ++ (python-packages-build py-pkgs); 
 
         ### build the python application (i.e. the webservice)
-        # fetch & unzip nltk-stopwords, an external dependency we are using
-        nltk-stopwords = pkgs.fetchzip {
-          url = "https://github.com/nltk/nltk_data/raw/5db857e6f7df11eabb5e5665836db9ec8df07e28/packages/corpora/stopwords.zip";
-          hash = "sha256-tX1CMxSvFjr0nnLxbbycaX/IBnzHFxljMZceX5zElPY=";
-        };
+        # unzip nltk-stopwords, an external dependency we are using
+        nltk-stopwords = pkgs.runCommand "nltk-stopwords" {} ''
+          mkdir $out
+          ${pkgs.unzip}/bin/unzip ${self.inputs.nltk-data}/packages/corpora/stopwords.zip -d $out
+        '';
         
         # download the sentence-transformer model being used
+        # this cannot be moved to the flake inputs due to git LFS
         all-mpnet-base-v2 = pkgs.fetchgit {
           url = "https://huggingface.co/sentence-transformers/all-mpnet-base-v2";
           rev = "bd44305fd6a1b43c16baf96765e2ecb20bca8e1d";
@@ -71,13 +79,8 @@
           fetchLFS = true;
         };
 
-        # download the oeh-metadata vocabulary
-        oeh-metadata-vocabs = pkgs.fetchFromGitHub {
-          owner = "openeduhub";
-          repo = "oeh-metadata-vocabs";
-          rev = "a4034cf951b2585e3b6e8d901736ac03e61429e7";
-          hash = "sha256-txmx/b/Kc+xikQB63+t6ah/SkqxqsXbDDmVLAWtI3CM=";
-        };
+        # the oeh-metadata vocabulary
+        oeh-metadata-vocabs = self.inputs.oeh-metadata-vocabs;
 
         # shared specification between pre-loader and web service
         wlo-topic-assistant-spec = {
@@ -88,8 +91,8 @@
           doCheck = false;
           # put nltk-stopwords into a directory
           preBuild = ''
-            mkdir -p $out/lib/nltk_data/corpora/stopwords
-            cp -r ${nltk-stopwords.out}/* $out/lib/nltk_data/corpora/stopwords
+            mkdir -p $out/lib/nltk_data/corpora
+            cp -r ${nltk-stopwords.out}/* $out/lib/nltk_data/corpora
           '';
           # make the created folder discoverable for NLTK
           makeWrapperArgs = ["--set NLTK_DATA $out/lib/nltk_data"];
