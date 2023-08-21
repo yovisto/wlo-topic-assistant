@@ -13,6 +13,13 @@
       url = "github:openeduhub/oeh-metadata-vocabs";
       flake = false;
     };
+    openapi-checks = {
+      url = "github:openeduhub/nix-openapi-checks";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-utils.follows = "flake-utils";
+      };
+    };
   };
 
   outputs = { self, nixpkgs, flake-utils, ... }:
@@ -22,7 +29,7 @@
         inherit (self.packages.${final.system}) wlo-topic-assistant;
       });
     } //
-    flake-utils.lib.eachDefaultSystem (system:
+    flake-utils.lib.eachSystem [ "x86_64-linux" "aarch64-linux" ] (system:
       let
         projectDir = self;
         # import the packages from nixpkgs
@@ -204,6 +211,13 @@
             pkgs.nix-init
             pkgs.nix-template
           ];
+        };
+        checks = {
+          openapi-check = self.inputs.openapi-checks.lib.${system}.openapi-valid {
+            serviceBin = "${self.packages.${system}.wlo-topic-assistant}/bin/wlo-topic-assistant";
+            openapiDomain = "openapi.json";
+            memorySize = 4096;
+          };
         };
       });
 }
