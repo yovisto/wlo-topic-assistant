@@ -105,12 +105,73 @@ def main():
 
         return leaves
 
-    @app.post("/topics_flat")
+    summary = "Predict topics from the OpenEduHub topic tree, using keywords"
+
+    @app.post(
+        "/topics_flat",
+        summary=summary,
+        description=f"""
+        {summary}
+
+        Parameters
+        ----------
+        text : str
+            The text to be analyzed.
+
+        Returns
+        -------
+        topics : list of Topic
+            The predicted topics from the topic tree.
+            Contains the following attributes:
+        
+            weight : int
+                The number of matches in the sub tree.
+            uri : str
+                The URI of the topic.
+            label : str, optional
+                The label of the topic.
+            match : str, optional
+                The keyword in the text that was associated with the topic.
+                If there are multiple, comma separated.
+        version : str
+            The version of the topic prediction tool.
+        """,
+    )
     def topics_flat(data: Data) -> Result:
         tree = a.go(data.text)
         return Result(topics=__flatten_tree(tree))
 
-    @app.post("/topics2_flat")
+    summary = "Predict topics from the OpenEduHub topic tree, using word embeddings"
+
+    @app.post(
+        "/topics2_flat",
+        summary=summary,
+        description=f"""
+        {summary}
+
+        Parameters
+        ----------
+        text : str
+            The text to be analyzed.
+
+        Returns
+        -------
+        topics : list of Topic
+            The predicted topics from the topic tree.
+            Contains the following attributes:
+        
+            weight : int
+                The weight attributed to the sub tree.
+            uri : str
+                The URI of the topic.
+            label : str, optional
+                The label of the topic.
+            match : null
+                Irrelevant for this function.
+        version : str
+            The version of the topic prediction tool.
+        """,
+    )
     def topics2_flat(data: Data) -> Result:
         tree = a2.go(data.text)
         return Result(topics=__flatten_tree(tree))
