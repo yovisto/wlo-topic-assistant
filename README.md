@@ -1,8 +1,12 @@
 # WLO Topic Assistant
 
 A utility to map arbitrary text to the WLO/OEH topics vocabulary based on keyword matching.
+
+Can be installed both through `Docker` or through `Nix`.
+
+## Docker Installation
  
-## Prerequisites
+### Prerequisites
 
 - Install [Docker](https://docker.com/).
 - Build the Docker container.
@@ -52,7 +56,7 @@ WLO
 
 This tree is a subset of the OEH-Topics taxonomy. The number in brackets indicates the number of matches found in the text. This number gets accumulated along the path of a leaf to the root. The terms in square brackets indicate the matching keywords.
 
-## Webservice
+### Webservice
 
 - To run the subject prediction tool as a simple REST based webservice, the following script can be used:
 
@@ -68,5 +72,37 @@ sh runService.sh
 curl -d '{"text" : "Im Englisch Unterricht behandeln wir heute Verben, Past Perfect und False Friends"}' -H "Content-Type: application/json" -X POST http://0.0.0.0:8080/topics
 ```	
 
+## Nix Installation
 
+### Prerequisites
 
+- Install the [Nix](https://nixos.org/) package manager through one off the following methods:
+  - [unofficial installer](https://github.com/DeterminateSystems/nix-installer) (recommended, for Linux & macOS), or 
+  - the official installer [for Linux](https://nixos.org/download.html#nix-install-linux) or [for macOS](https://nixos.org/download.html#nix-install-macos)
+    - If installing through the official installer, enable the experimental `Flakes` feature: https://nixos.wiki/wiki/Flakes#Permanent 
+
+### Webservice
+
+To run the web-service with `Nix`, neither cloning this repository, nor installing `Docker` is required.
+Simply run the following command to start the web-service:
+```
+nix run github:yovisto/wlo-topic-assistant
+```
+
+To retrieve the topics, create a POST request and submit a json document with a text as for example: 
+```
+curl -d '{"text" : "Im Englisch Unterricht behandeln wir heute Verben, Past Perfect und False Friends"}' -H "Content-Type: application/json" -X POST http://0.0.0.0:8080/topics
+```	
+
+### Docker image
+
+Alternatively a `Docker` image can be built locally (also without having to install `Docker`):
+```
+nix build "github:yovisto/wlo-topic-assistant#docker"
+```
+
+The image can be found in the current folder as `result`.
+It can be loaded, if `Docker` is installed, through
+```
+docker load -i result
+```

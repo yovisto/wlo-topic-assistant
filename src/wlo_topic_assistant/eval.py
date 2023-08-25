@@ -1,5 +1,5 @@
 import json, sys, rdflib
-from topic_assistant import TopicAssistant
+from wlo_topic_assistant.topic_assistant import TopicAssistant
 import pandas as pd
 from rdflib.namespace import RDF, SKOS
 

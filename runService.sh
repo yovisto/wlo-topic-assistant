@@ -1,1 +1,2 @@
-docker run  -p 8080:8080 -d --name wlo-topic-assistant -v `pwd`/src:/scr wlo-topic-py python3 /scr/webservice.py 
+docker rm -f wlo-topic-assistant
+docker run  -p 8080:8080 --name wlo-topic-assistant wlo-topics-py python3 -m wlo_topic_assistant.webservice $*

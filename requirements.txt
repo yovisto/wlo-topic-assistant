@@ -1,0 +1,10 @@
+fastapi
+pydantic
+uvicorn
+rdflib
+treelib
+nltk
+sentence-transformers
+scikit-learn
+pandas
+torch
