@@ -2,9 +2,20 @@
   description = "The WLO topic assistant, packaged in pure Nix";
 
   inputs = {
+    # stable branch of the nix package repository
     nixpkgs.url = "github:nixos/nixpkgs/nixos-23.05";
+    # utilities
     flake-utils.url = "github:numtide/flake-utils";
     nix-filter.url = "github:numtide/nix-filter";
+    # automatic testing of the service
+    openapi-checks = {
+      url = "github:openeduhub/nix-openapi-checks";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-utils.follows = "flake-utils";
+      };
+    };
+    # external data that is versioned through the flake.lock
     nltk-data = {
       url = "github:nltk/nltk_data";
       flake = false;
@@ -12,13 +23,6 @@
     oeh-metadata-vocabs = {
       url = "github:openeduhub/oeh-metadata-vocabs";
       flake = false;
-    };
-    openapi-checks = {
-      url = "github:openeduhub/nix-openapi-checks";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-        flake-utils.follows = "flake-utils";
-      };
     };
   };
 
@@ -41,42 +45,44 @@
         python = pkgs.python310;
         # utility to easily filter out unnecessary files from the source
         nix-filter = self.inputs.nix-filter.lib;
-        
+
         ### create the python installation for the application
         python-packages-build = py-pkgs:
-          with py-pkgs; [fastapi
-                         pydantic
-                         uvicorn
-                         rdflib
-                         nltk
-                         sentence-transformers
-                         scikit-learn
-                         pandas
-                         torchWithoutCuda
-                         # dependencies from PyPi, generated through nix-template
-                         (pkgs.callPackage
-                           ./pkgs/treelib.nix
-                           {inherit buildPythonPackage six;})
-                        ];
+          with py-pkgs; [
+            fastapi
+            pydantic
+            uvicorn
+            rdflib
+            nltk
+            sentence-transformers
+            scikit-learn
+            pandas
+            torchWithoutCuda
+            # dependencies from PyPi, generated through nix-template
+            (pkgs.callPackage
+              ./pkgs/treelib.nix
+              { inherit buildPythonPackage six; })
+          ];
 
         ### create the python installation for development
         # the development installation contains all build packages,
         # plus some additional ones we do not need to include in production.
         python-packages-devel = py-pkgs:
-          with py-pkgs; [ipython
-                         jupyter
-                         black
-                         isort
-                        ]
-          ++ (python-packages-build py-pkgs); 
+          with py-pkgs; [
+            ipython
+            jupyter
+            black
+            isort
+          ]
+          ++ (python-packages-build py-pkgs);
 
         ### build the python application (i.e. the webservice)
         # unzip nltk-stopwords, an external dependency we are using
-        nltk-stopwords = pkgs.runCommand "nltk-stopwords" {} ''
+        nltk-stopwords = pkgs.runCommand "nltk-stopwords" { } ''
           mkdir $out
           ${pkgs.unzip}/bin/unzip ${self.inputs.nltk-data}/packages/corpora/stopwords.zip -d $out
         '';
-        
+
         # download the sentence-transformer model being used
         # this cannot be moved to the flake inputs due to git LFS
         all-mpnet-base-v2 = pkgs.fetchgit {
@@ -102,23 +108,23 @@
             cp -r ${nltk-stopwords.out}/* $out/lib/nltk_data/corpora
           '';
           # make the created folder discoverable for NLTK
-          makeWrapperArgs = ["--set NLTK_DATA $out/lib/nltk_data"];
+          makeWrapperArgs = [ "--set NLTK_DATA $out/lib/nltk_data" ];
         };
 
         # build pre-loader; this creates the topic assistants at build time
         wlo-topic-assistant-preload =
           python.pkgs.buildPythonApplication
-            ( wlo-topic-assistant-spec // {
+            (wlo-topic-assistant-spec // {
               pname = "wlo-topic-assistant-preload";
               # prevent unnecessary rebuilds
               src = nix-filter {
                 root = self;
                 include = [
-                  ./wlo_topic_assistant/__init__.py
-                  ./wlo_topic_assistant/_version.py
-                  ./wlo_topic_assistant/generate_assistants.py
-                  ./wlo_topic_assistant/topic_assistant.py
-                  ./wlo_topic_assistant/topic_assistant2.py
+                  ./src/wlo_topic_assistant/__init__.py
+                  ./src/wlo_topic_assistant/_version.py
+                  ./src/wlo_topic_assistant/generate_assistants.py
+                  ./src/wlo_topic_assistant/topic_assistant.py
+                  ./src/wlo_topic_assistant/topic_assistant2.py
                   ./setup.py
                   ./requirements.txt
                 ];
@@ -129,7 +135,7 @@
               };
               # replace calls to resources from the internet with prefetched ones
               prePatch = ''
-                substituteInPlace wlo_topic_assistant/*.py \
+                substituteInPlace src/wlo_topic_assistant/*.py \
                   --replace \
                     "all-mpnet-base-v2" \
                     "${all-mpnet-base-v2}" \
@@ -160,12 +166,12 @@
         # build the web service
         wlo-topic-assistant =
           python.pkgs.buildPythonApplication
-            ( wlo-topic-assistant-spec // {
+            (wlo-topic-assistant-spec // {
               pname = "wlo-topic-assistant";
               src = nix-filter {
                 root = self;
                 include = [
-                  "wlo_topic_assistant"
+                  "src"
                   ./setup.py
                   ./requirements.txt
                 ];
@@ -176,7 +182,7 @@
               };
               # set the path of the topic assistants
               prePatch = ''
-                substituteInPlace wlo_topic_assistant/webservice.py \
+                substituteInPlace src/wlo_topic_assistant/webservice.py \
                   --replace \
                     "data/" \
                     "${wlo-topic-assistant-assistants}/"
@@ -188,11 +194,12 @@
           name = wlo-topic-assistant.pname;
           tag = wlo-topic-assistant.version;
           config = {
-            Cmd = ["${wlo-topic-assistant}/bin/wlo-topic-assistant"];
+            Cmd = [ "${wlo-topic-assistant}/bin/wlo-topic-assistant" ];
           };
         };
 
-      in rec {
+      in
+      rec {
         # the packages that we can build
         packages = rec {
           inherit wlo-topic-assistant;
@@ -213,7 +220,7 @@
           ];
         };
         checks = {
-          openapi-check = self.inputs.openapi-checks.lib.${system}.openapi-valid {
+          test-service = self.inputs.openapi-checks.lib.${system}.test-service {
             serviceBin = "${self.packages.${system}.wlo-topic-assistant}/bin/wlo-topic-assistant";
             openapiDomain = "openapi.json";
             memorySize = 4096;

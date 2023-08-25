@@ -177,7 +177,7 @@ def main():
         return Result(topics=__flatten_tree(tree))
 
     uvicorn.run(
-        "wlo_topic_assistant.webservice:app",
+        app,
         host=args.host,
         port=args.port,
         reload=False,
