@@ -2,6 +2,8 @@
 
 A utility to map arbitrary text to the WLO/OEH topics vocabulary based on keyword matching.
 
+Can be installed both through `Docker` or through `Nix`.
+
 ## Docker Installation
  
 ### Prerequisites
@@ -81,25 +83,26 @@ curl -d '{"text" : "Im Englisch Unterricht behandeln wir heute Verben, Past Perf
 
 ### Webservice
 
-- Build the `Docker` image for the web-service:
+To run the web-service with `Nix`, neither cloning this repository, nor installing `Docker` is required.
+Simply run the following command to start the web-service:
 ```
-nix build
-```
-
-- Load it:
-```
-docker load -i result
+nix run github:yovisto/wlo-topic-assistant
 ```
 
-- Run the web-service, noting the version that was supplied:
-
-```
-docker run -p 8080:8080 wlo-topic-assistant:<version>
-```
-
-- To retrieve the topics, create a POST request and submit a json document with a text as for example: 
-
+To retrieve the topics, create a POST request and submit a json document with a text as for example: 
 ```
 curl -d '{"text" : "Im Englisch Unterricht behandeln wir heute Verben, Past Perfect und False Friends"}' -H "Content-Type: application/json" -X POST http://0.0.0.0:8080/topics
 ```	
 
+### Docker image
+
+Alternatively a `Docker` image can be built locally (also without having to install `Docker`):
+```
+nix build "github:yovisto/wlo-topic-assistant#docker"
+```
+
+The image can be found in the current folder as `result`.
+It can be loaded, if `Docker` is installed, through
+```
+docker load -i result
+```

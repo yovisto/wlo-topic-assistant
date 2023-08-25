@@ -35,7 +35,6 @@
     } //
     flake-utils.lib.eachSystem [ "x86_64-linux" "aarch64-linux" ] (system:
       let
-        projectDir = self;
         # import the packages from nixpkgs
         pkgs = import nixpkgs {
           inherit system;
