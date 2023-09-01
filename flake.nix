@@ -229,10 +229,11 @@
           {
             test-service =
               self.inputs.openapi-checks.lib.${system}.test-service {
-                serviceBin =
+                service-bin =
                   "${wlo-topic-assistant}/bin/${wlo-topic-assistant.pname}";
-                openapiDomain = "openapi.json";
-                memorySize = 4096;
+                service-port = 8080;
+                openapi-domain = "openapi.json";
+                memory-size = 4096;
               };
           });
       });
