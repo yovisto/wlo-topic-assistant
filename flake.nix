@@ -33,7 +33,7 @@
         inherit (self.packages.${final.system}) wlo-topic-assistant;
       });
     } //
-    flake-utils.lib.eachSystem [ "x86_64-linux" "aarch64-linux" ] (system:
+    flake-utils.lib.eachDefaultSystem (system:
       let
         # import the packages from nixpkgs
         pkgs = import nixpkgs {
@@ -200,12 +200,16 @@
       in
       rec {
         # the packages that we can build
-        packages = rec {
+        packages = {
           inherit wlo-topic-assistant;
           preload = wlo-topic-assistant-assistants;
-          docker = docker-img;
           default = wlo-topic-assistant;
-        };
+        } // (nixpkgs.lib.optionalAttrs
+          # only build docker images on linux systems
+          (system == "x86_64-linux" || system == "aarch64-linux")
+          {
+            docker = docker-img;
+          });
         # the development environment
         devShells.default = pkgs.mkShell {
           buildInputs = [
@@ -218,12 +222,17 @@
             pkgs.nix-template
           ];
         };
-        checks = {
-          test-service = self.inputs.openapi-checks.lib.${system}.test-service {
-            serviceBin = "${self.packages.${system}.wlo-topic-assistant}/bin/wlo-topic-assistant";
-            openapiDomain = "openapi.json";
-            memorySize = 4096;
-          };
-        };
+        checks = { } // (nixpkgs.lib.optionalAttrs
+          # only run the VM checks on linux systems
+          (system == "x86_64-linux" || system == "aarch64-linux")
+          {
+            test-service =
+              self.inputs.openapi-checks.lib.${system}.test-service {
+                serviceBin =
+                  "${wlo-topic-assistant}/bin/${wlo-topic-assistant.pname}";
+                openapiDomain = "openapi.json";
+                memorySize = 4096;
+              };
+          });
       });
 }
