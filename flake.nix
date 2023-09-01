@@ -157,6 +157,7 @@
             wlo-topic-assistant-preload
           ];
           installPhase = ''
+            export TRANSFORMERS_CACHE=$TMPDIR
             mkdir $out
             ${wlo-topic-assistant-preload}/bin/preload $out
           '';
