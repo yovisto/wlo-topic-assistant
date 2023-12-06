@@ -3,7 +3,7 @@
 
   inputs = {
     # stable branch of the nix package repository
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-23.05";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-23.11";
     # utilities
     flake-utils.url = "github:numtide/flake-utils";
     nix-filter.url = "github:numtide/nix-filter";
@@ -36,10 +36,7 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         # import the packages from nixpkgs
-        pkgs = import nixpkgs {
-          inherit system;
-          config.allowUnfree = true;
-        };
+        pkgs = nixpkgs.legacyPackages.${system};
         # the python version we are using
         python = pkgs.python310;
         # utility to easily filter out unnecessary files from the source
@@ -56,11 +53,8 @@
             sentence-transformers
             scikit-learn
             pandas
-            torchWithoutCuda
-            # dependencies from PyPi, generated through nix-template
-            (pkgs.callPackage
-              ./pkgs/treelib.nix
-              { inherit buildPythonPackage six; })
+            torch
+            treelib
           ];
 
         ### create the python installation for development
@@ -96,7 +90,7 @@
 
         # shared specification between pre-loader and web service
         wlo-topic-assistant-spec = {
-          version = "0.1.2";
+          version = "0.1.3";
           propagatedBuildInputs = (python-packages-build python.pkgs);
           # no tests are available, nix built-in import check fails
           # due to how we handle import of nltk-stopwords
@@ -208,9 +202,7 @@
         } // (nixpkgs.lib.optionalAttrs
           # only build docker images on linux systems
           (system == "x86_64-linux" || system == "aarch64-linux")
-          {
-            docker = docker-img;
-          });
+          { docker = docker-img; });
         # the development environment
         devShells.default = pkgs.mkShell {
           buildInputs = [
@@ -232,7 +224,7 @@
                 service-bin =
                   "${wlo-topic-assistant}/bin/${wlo-topic-assistant.pname}";
                 service-port = 8080;
-                openapi-domain = "openapi.json";
+                openapi-domain = "/openapi.json";
                 memory-size = 4096;
               };
           });
