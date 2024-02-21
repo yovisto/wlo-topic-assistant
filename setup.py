@@ -4,7 +4,7 @@ from src.wlo_topic_assistant._version import __version__
 
 setup(
     name="wlo-topic-assistant",
-    version="0.1.2",
+    version=__version__,
     description="A utility to map arbitrary text to the WLO/OEH topics vocabulary based on keyword matching.",
     author="",
     author_email="",
