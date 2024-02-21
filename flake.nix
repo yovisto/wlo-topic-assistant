@@ -38,7 +38,7 @@
         # import the packages from nixpkgs
         pkgs = nixpkgs.legacyPackages.${system};
         # the python version we are using
-        python = pkgs.python310;
+        python = pkgs.python3;
         # utility to easily filter out unnecessary files from the source
         nix-filter = self.inputs.nix-filter.lib;
 
@@ -90,7 +90,7 @@
 
         # shared specification between pre-loader and web service
         wlo-topic-assistant-spec = {
-          version = "0.1.3";
+          version = "0.1.4";
           propagatedBuildInputs = (python-packages-build python.pkgs);
           # no tests are available, nix built-in import check fails
           # due to how we handle import of nltk-stopwords
