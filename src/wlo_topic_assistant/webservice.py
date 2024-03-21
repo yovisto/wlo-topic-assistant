@@ -141,7 +141,7 @@ def main():
         tree = a.go(data.text)
         return Result(topics=__flatten_tree(tree))
 
-    summary = "Predict topics from the OpenEduHub topic tree, using word embeddings"
+    summary = "Predict topics from the OpenEduHub topic tree, using text embeddings"
 
     @app.post(
         "/topics2_flat",
